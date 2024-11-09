@@ -50,22 +50,26 @@ class _FuturePageState extends State<FuturePage> {
     return 3;
   }
 
-  // Method returnFG using FutureGroup
+  // Method returnFG using Future.wait
   void returnFG() {
-    FutureGroup<int> futureGroup = FutureGroup<int>();
-    futureGroup.add(returnOneAsync());
-    futureGroup.add(returnTwoAsync());
-    futureGroup.add(returnThreeAsync());
-    futureGroup.close();
-    futureGroup.future.then((List<int> value) {
-      int total = 0;
-      for (var element in value) {
-        total += element;
-      }
+    final futures = Future.wait<int>([
+      returnOneAsync(),
+      returnTwoAsync(),
+      returnThreeAsync(),
+    ]);
+
+    futures.then((List<int> value) {
+      int total = value.reduce((a, b) => a + b);
       setState(() {
         result = total.toString();
       });
     });
+  }
+
+  // Method returnError
+  Future returnError() async {
+    await Future.delayed(const Duration(seconds: 2));
+    throw Exception('Something terrible happened!');
   }
 
   @override
@@ -81,7 +85,19 @@ class _FuturePageState extends State<FuturePage> {
             ElevatedButton(
               child: const Text('GO!'),
               onPressed: () {
-                returnFG(); // Menjalankan returnFG ketika tombol ditekan
+                // Run returnError and handle success or error states
+                returnError()
+                  .then((value) {
+                    setState(() {
+                      result = 'Success';
+                    });
+                  })
+                  .catchError((onError) {
+                    setState(() {
+                      result = onError.toString();
+                    });
+                  })
+                  .whenComplete(() => print('Complete'));
               },
             ),
             const Spacer(),
