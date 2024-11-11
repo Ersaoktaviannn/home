@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 import 'package:async/async.dart';
+import 'geolocation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +20,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const FuturePage(),
+      home: const LocationScreen(),
     );
   }
 }
@@ -34,7 +35,6 @@ class FuturePage extends StatefulWidget {
 class _FuturePageState extends State<FuturePage> {
   String result = '';
 
-  // Method returnOneAsync, returnTwoAsync, returnThreeAsync
   Future<int> returnOneAsync() async {
     await Future.delayed(const Duration(seconds: 3));
     return 1;
@@ -50,33 +50,28 @@ class _FuturePageState extends State<FuturePage> {
     return 3;
   }
 
-  // Method returnFG using Future.wait
-  void returnFG() {
-    final futures = Future.wait<int>([
-      returnOneAsync(),
-      returnTwoAsync(),
-      returnThreeAsync(),
-    ]);
-
-    futures.then((List<int> value) {
-      int total = value.reduce((a, b) => a + b);
-      setState(() {
-        result = total.toString();
-      });
-    });
-  }
-
-  // Method returnError
   Future returnError() async {
     await Future.delayed(const Duration(seconds: 2));
     throw Exception('Something terrible happened!');
+  }
+
+  Future handleError() async {
+    try {
+      await returnError();
+    } catch (error) {
+      setState(() {
+        result = error.toString();
+      });
+    } finally {
+      print('Complete');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Back From The Future'),
+        title: const Text('Back From The Future - Ersa'),
       ),
       body: Center(
         child: Column(
@@ -85,19 +80,7 @@ class _FuturePageState extends State<FuturePage> {
             ElevatedButton(
               child: const Text('GO!'),
               onPressed: () {
-                // Run returnError and handle success or error states
-                returnError()
-                  .then((value) {
-                    setState(() {
-                      result = 'Success';
-                    });
-                  })
-                  .catchError((onError) {
-                    setState(() {
-                      result = onError.toString();
-                    });
-                  })
-                  .whenComplete(() => print('Complete'));
+                handleError();
               },
             ),
             const Spacer(),
